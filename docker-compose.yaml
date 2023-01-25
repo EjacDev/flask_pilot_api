@@ -1,0 +1,45 @@
+version: "1"
+
+services:
+  db_postgres:
+    image: postgis/postgis:15-3.3
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    environment:
+      - POSTGRES_DB=pilotdatabase
+      - POSTGRES_USER=pilotuser
+      - POSTGRES_PASSWORD=dbpassword
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+
+  flask_app:
+    build: .
+    image: flask_app:1
+    volumes:    
+      - .:/container
+    restart: always
+    environment:
+      - DATABASE_URL=db_postgres
+      - DATABASE_DRIVER=postgresql
+      - DATABASE_NAME=pilotdatabase
+      - DATABASE_USER=pilotuser
+      - DATABASE_PASS=dbpassword
+      - SECRET_KEY=f5192f31a2971f5d03b0db4eefd88af1596ba9141af194ebb48e8210741151be
+    depends_on:
+      - db_postgres
+
+  nginx:
+    image: nginx:1.13
+    ports: 
+      - 80:80
+    volumes: 
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - flask_app
+
+volumes:
+  .:
+  postgres_data:
